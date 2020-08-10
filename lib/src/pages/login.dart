@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rxdart_login/src/blocs/auth.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key key}) : super(key: key);
@@ -13,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    var provider = Provider.of<AuthModel>(context);
     final mq = MediaQuery.of(context).size;
     return Scaffold(
       backgroundColor: Color(0XFFF9EBE0),
@@ -21,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
         height: mq.height,
         child: Column(children: <Widget>[
           _headerLogin(mq),
-          _form(),
+          _form(provider),
           SizedBox(
             height: 10,
           ),
@@ -58,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Padding _form() {
+  Padding _form(AuthModel auth) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Form(
@@ -66,31 +69,49 @@ class _LoginPageState extends State<LoginPage> {
           children: <Widget>[
             ListTile(
               title: Text('Username'),
-              subtitle: TextFormField(
-                decoration: new InputDecoration(),
-              ),
+              subtitle: StreamBuilder<String>(
+                  stream: auth.emailStream,
+                  builder: (context, snapshot) {
+                    return TextFormField(
+                      decoration:
+                          new InputDecoration(errorText: snapshot.error),
+                      onChanged: auth.changeEmail,
+                    );
+                  }),
             ),
             SizedBox(
               height: 20,
             ),
             ListTile(
               title: Text('Password'),
-              subtitle: TextFormField(
-                decoration: new InputDecoration(),
-              ),
+              subtitle: StreamBuilder<String>(
+                  stream: auth.passwordStream,
+                  builder: (context, snapshot) {
+                    return TextFormField(
+                      decoration:
+                          new InputDecoration(errorText: snapshot.error),
+                      onChanged: auth.changePassword,
+                    );
+                  }),
             ),
             SizedBox(
               height: 20,
             ),
-            MaterialButton(
-              onPressed: () {},
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25.0)),
-              color: Color(0xFFDE8F53),
-              child: Text(
-                'Log in',
-              ),
-            ),
+            StreamBuilder<bool>(
+                stream: auth.formValidStream,
+                builder: (context, snapshot) {
+                  return MaterialButton(
+                    onPressed: () => snapshot.hasError || !snapshot.hasData
+                        ? null
+                        : auth.login(),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25.0)),
+                    color: Color(0xFFDE8F53),
+                    child: Text(
+                      'Log in',
+                    ),
+                  );
+                }),
           ],
         ),
       ),
